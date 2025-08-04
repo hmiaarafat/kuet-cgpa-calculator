@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KUET CGPA Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-card {
+            background: linear-gradient(135deg, #003973, #0055A4);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">KUET CGPA Calculator</h1>
+            <p class="text-gray-500 mt-2">Calculate your term GPA and overall CGPA based on the official academic ordinance.</p>
+        </header>
+
+        <div id="result-display" class="result-card text-white p-6 rounded-2xl shadow-lg mb-8 flex flex-col md:flex-row justify-around items-center text-center sticky top-4 z-10">
+            <div class="w-full md:w-auto mb-4 md:mb-0">
+                <h2 class="text-lg font-medium text-blue-200">Overall CGPA</h2>
+                <p id="cgpa-result" class="text-5xl font-bold">0.00</p>
+            </div>
+            <div class="w-full md:w-auto">
+                <h2 class="text-lg font-medium text-blue-200">Total Credits</h2>
+                <p id="total-credits-result" class="text-5xl font-bold">0.00</p>
+            </div>
+        </div>
+
+        <main id="terms-container" class="space-y-8">
+        </main>
+
+        <div class="mt-8 flex justify-center">
+            <button id="add-term-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-transform transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Add Term
+            </button>
+        </div>
+
+        <footer class="text-center mt-12 text-gray-400 text-sm">
+            <p>&copy; 2024 KUET CGPA Calculator. All rights reserved.</p>
+            <p class="mt-1">Calculations are based on the KUET Academic Ordinance for Undergraduate Studies.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const termsContainer = document.getElementById('terms-container');
+            const addTermBtn = document.getElementById('add-term-btn');
+            const cgpaResultEl = document.getElementById('cgpa-result');
+            const totalCreditsResultEl = document.getElementById('total-credits-result');
+
+            let termCounter = 0;
+
+            const gradePoints = {
+                "4.00": "A+",
+                "3.75": "A",
+                "3.50": "A-",
+                "3.25": "B+",
+                "3.00": "B",
+                "2.75": "B-",
+                "2.50": "C+",
+                "2.25": "C",
+                "2.00": "D",
+                "0.00": "F"
+            };
+
+            const createGradeOptions = () => {
+                return Object.entries(gradePoints).reverse().map(([point, grade]) => 
+                    `<option value="${point}">${grade} (${point})</option>`
+                ).join('');
+            };
+
+            const createCourseRow = () => {
+                const courseId = `c_${Date.now()}_${Math.random()}`;
+                const courseRow = document.createElement('div');
+                courseRow.className = 'course-row grid grid-cols-12 gap-2 items-center py-2 fade-in';
+                courseRow.id = courseId;
+                
+                courseRow.innerHTML = `
+                    <div class="col-span-6">
+                        <input type="text" placeholder="Course Code (e.g., CSE 1101)" class="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent transition">
+                    </div>
+                    <div class="col-span-2">
+                        <input type="number" step="0.25" min="0" placeholder="Credits" class="course-credit w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent transition text-center">
+                    </div>
+                    <div class="col-span-3">
+                        <select class="course-grade w-full p-2 border border-gray-200 rounded-md bg-white focus:ring-2 focus:ring-blue-400 focus:border-transparent transition">
+                            <option value="-1" selected disabled>Select Grade</option>
+                            ${createGradeOptions()}
+                        </select>
+                    </div>
+                    <div class="col-span-1 text-right">
+                        <button class="remove-course-btn text-gray-400 hover:text-red-500 transition-colors" title="Remove Course">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                return courseRow;
+            };
+
+            const createTermBlock = () => {
+                termCounter++;
+                const termId = `term_${termCounter}`;
+                const termBlock = document.createElement('div');
+                termBlock.className = 'term-block bg-white p-6 rounded-2xl shadow-md fade-in';
+                termBlock.id = termId;
+
+                termBlock.innerHTML = `
+                    <div class="flex justify-between items-center mb-4 border-b pb-4 border-gray-200">
+                        <h3 class="text-2xl font-bold text-gray-700">Term ${termCounter}</h3>
+                        <div class="flex items-center space-x-4">
+                            <div class="text-right">
+                                <span class="text-sm font-medium text-gray-500">Term GPA</span>
+                                <p class="term-gpa text-2xl font-bold text-blue-600">0.00</p>
+                            </div>
+                            <button class="remove-term-btn text-gray-400 hover:text-red-600 transition-colors" title="Remove Term">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="courses-list space-y-2">
+                    </div>
+                    <div class="mt-4">
+                        <button class="add-course-btn w-full text-blue-600 font-semibold py-2 px-4 rounded-lg border-2 border-dashed border-blue-300 hover:bg-blue-50 hover:border-blue-500 transition">
+                            + Add Course
+                        </button>
+                    </div>
+                `;
+                
+                const coursesList = termBlock.querySelector('.courses-list');
+                coursesList.appendChild(createCourseRow()); 
+                termsContainer.appendChild(termBlock);
+            };
+
+            const updateCalculations = () => {
+                let totalWeightedGradePoints = 0;
+                let totalCreditsAttempted = 0;
+
+                document.querySelectorAll('.term-block').forEach(termBlock => {
+                    let termWeightedGradePoints = 0;
+                    let termCreditsAttempted = 0;
+
+                    termBlock.querySelectorAll('.course-row').forEach(row => {
+                        const creditInput = row.querySelector('.course-credit');
+                        const gradeSelect = row.querySelector('.course-grade');
+                        
+                        const credit = parseFloat(creditInput.value);
+                        const gradePoint = parseFloat(gradeSelect.value);
+
+                        if (!isNaN(credit) && credit > 0 && gradePoint >= 0) {
+                            if (gradePoint > 0) {
+                                termWeightedGradePoints += credit * gradePoint;
+                                termCreditsAttempted += credit;
+                            }
+                        }
+                    });
+
+                    const termGpaEl = termBlock.querySelector('.term-gpa');
+                    const termGpa = termCreditsAttempted > 0 ? (termWeightedGradePoints / termCreditsAttempted) : 0;
+                    termGpaEl.textContent = termGpa.toFixed(2);
+
+                    totalWeightedGradePoints += termWeightedGradePoints;
+                    totalCreditsAttempted += termCreditsAttempted;
+                });
+
+                const overallCgpa = totalCreditsAttempted > 0 ? (totalWeightedGradePoints / totalCreditsAttempted) : 0;
+                cgpaResultEl.textContent = overallCgpa.toFixed(2);
+                totalCreditsResultEl.textContent = totalCreditsAttempted.toFixed(2);
+            };
+
+            termsContainer.addEventListener('click', (e) => {
+                if (e.target && e.target.closest('.add-course-btn')) {
+                    const coursesList = e.target.closest('.term-block').querySelector('.courses-list');
+                    coursesList.appendChild(createCourseRow());
+                }
+
+                if (e.target && e.target.closest('.remove-course-btn')) {
+                    e.target.closest('.course-row').remove();
+                    updateCalculations();
+                }
+
+                if (e.target && e.target.closest('.remove-term-btn')) {
+                    e.target.closest('.term-block').remove();
+                    updateCalculations();
+                }
+            });
+
+            termsContainer.addEventListener('input', (e) => {
+                if (e.target && (e.target.classList.contains('course-credit') || e.target.classList.contains('course-grade'))) {
+                    updateCalculations();
+                }
+            });
+            
+            termsContainer.addEventListener('change', (e) => {
+                 if (e.target && e.target.classList.contains('course-grade')) {
+                    updateCalculations();
+                }
+            });
+
+            addTermBtn.addEventListener('click', createTermBlock);
+
+            createTermBlock();
+        });
+    </script>
+</body>
+</html>
+
+
